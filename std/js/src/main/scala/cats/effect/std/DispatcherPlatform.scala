@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Typelevel
+ * Copyright 2020-2022 Typelevel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,4 +16,27 @@
 
 package cats.effect.std
 
-private[std] trait DispatcherPlatform[F[_]] { this: Dispatcher[F] => }
+import scala.scalajs.js.{|, Function1, JavaScriptException, Promise, Thenable}
+
+private[std] trait DispatcherPlatform[F[_]] { this: Dispatcher[F] =>
+
+  /**
+   * Submits an effect to be executed, returning a `Promise` that holds the result of its
+   * evaluation.
+   */
+  def unsafeToPromise[A](fa: F[A]): Promise[A] =
+    new Promise[A]((resolve: Function1[A | Thenable[A], _], reject: Function1[Any, _]) =>
+      unsafeRunAsync(fa) {
+        case Left(JavaScriptException(e)) =>
+          reject(e)
+          ()
+
+        case Left(e) =>
+          reject(e)
+          ()
+
+        case Right(value) =>
+          resolve(value)
+          ()
+      })
+}

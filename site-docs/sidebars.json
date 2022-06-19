@@ -2,10 +2,20 @@
   "docs": {
     "Overview": [
       "getting-started",
+      "concepts",
       "tutorial",
+      "faq",
+      "migration-guide"
+    ],
+    "Core Runtime": [
+      "core/test-runtime",
+      "core/fiber-dumps",
+      "tracing",
       "thread-model",
-      "typeclasses",
-      "schedulers"
+      "schedulers",
+      "core/io-runtime-config",
+      "core/native-image",
+      "core/jlink"
     ],
     "Typeclasses": [
       "typeclasses",
@@ -27,9 +37,12 @@
       "std/hotswap",
       "std/pqueue",
       "std/queue",
+      "std/random",
       "std/ref",
       "std/resource",
-      "std/supervisor"
+      "std/semaphore",
+      "std/supervisor",
+      "std/async-await"
     ]
   }
 }

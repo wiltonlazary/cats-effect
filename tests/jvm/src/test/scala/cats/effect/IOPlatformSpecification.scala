@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Typelevel
+ * Copyright 2020-2022 Typelevel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,23 @@
 
 package cats.effect
 
-import cats.syntax.all._
 import cats.effect.std.Semaphore
+import cats.syntax.all._
 
 import org.scalacheck.Prop.forAll
-
 import org.specs2.ScalaCheck
-import org.specs2.mutable.Specification
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-import java.util.concurrent.{CancellationException, CountDownLatch, Executors}
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.{
+  CancellationException,
+  CompletableFuture,
+  CountDownLatch,
+  Executors
+}
 
-abstract class IOPlatformSpecification extends Specification with ScalaCheck with Runners {
+trait IOPlatformSpecification { self: BaseSpec with ScalaCheck =>
 
   def platformSpecs = {
     "platform" should {
@@ -140,7 +142,7 @@ abstract class IOPlatformSpecification extends Specification with ScalaCheck wit
         var interrupted = true
         val latch = new CountDownLatch(1)
 
-        val await = IO.interruptible(false) {
+        val await = IO.interruptible {
           latch.countDown()
           Thread.sleep(15000)
           interrupted = false
@@ -158,7 +160,7 @@ abstract class IOPlatformSpecification extends Specification with ScalaCheck wit
         var interrupted = true
         val latch = new CountDownLatch(1)
 
-        val await = IO.interruptible(true) {
+        val await = IO.interruptibleMany {
           latch.countDown()
 
           try {
@@ -194,12 +196,12 @@ abstract class IOPlatformSpecification extends Specification with ScalaCheck wit
         val ec = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
 
         val run = for {
-          //Run in a tight loop on single-threaded ec so only hope of
-          //seeing cancelation status is auto-cede
+          // Run in a tight loop on single-threaded ec so only hope of
+          // seeing cancelation status is auto-cede
           fiber <- forever.start
-          //Allow the tight loop to be scheduled
+          // Allow the tight loop to be scheduled
           _ <- IO.sleep(5.millis)
-          //Only hope for the cancelation being run is auto-yielding
+          // Only hope for the cancelation being run is auto-yielding
           _ <- fiber.cancel
         } yield true
 

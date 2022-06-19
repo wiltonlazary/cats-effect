@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Typelevel
+ * Copyright 2020-2022 Typelevel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,36 @@
 
 package cats.effect.unsafe
 
+import cats.effect.tracing.TracingConstants
+
+import org.scalajs.macrotaskexecutor.MacrotaskExecutor
+
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
-// import scala.scalajs.concurrent.QueueExecutionContext
-import scala.scalajs.js.timers
+import scala.scalajs.LinkingInfo
 
 private[unsafe] abstract class IORuntimeCompanionPlatform { this: IORuntime.type =>
 
-  // the promises executor doesn't yield (scala-js/scala-js#4129)
   def defaultComputeExecutionContext: ExecutionContext =
-    PolyfillExecutionContext
+    if (LinkingInfo.developmentMode && TracingConstants.isStackTracing && FiberMonitor.weakRefsAvailable)
+      new FiberAwareExecutionContext(MacrotaskExecutor)
+    else
+      MacrotaskExecutor
 
-  def defaultScheduler: Scheduler =
-    new Scheduler {
-      def sleep(delay: FiniteDuration, task: Runnable): Runnable = {
-        val handle = timers.setTimeout(delay)(task.run())
-        () => timers.clearTimeout(handle)
-      }
-
-      def nowMillis() = System.currentTimeMillis()
-      def monotonicNanos() = System.nanoTime()
-    }
+  def defaultScheduler: Scheduler = Scheduler.createDefaultScheduler()._1
 
   private[this] var _global: IORuntime = null
 
-  private[effect] def installGlobal(global: IORuntime): Unit = {
-    require(_global == null)
-    _global = global
+  private[effect] def installGlobal(global: => IORuntime): Boolean = {
+    if (_global == null) {
+      _global = global
+      true
+    } else {
+      false
+    }
   }
+
+  private[effect] def resetGlobal(): Unit =
+    _global = null
 
   lazy val global: IORuntime = {
     if (_global == null) {
@@ -58,5 +60,10 @@ private[unsafe] abstract class IORuntimeCompanionPlatform { this: IORuntime.type
     }
 
     _global
+  }
+
+  private[effect] def registerFiberMonitorMBean(fiberMonitor: FiberMonitor): () => Unit = {
+    val _ = fiberMonitor
+    () => ()
   }
 }

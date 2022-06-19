@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Typelevel
+ * Copyright 2020-2022 Typelevel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package cats.effect
 
-import org.specs2.mutable.Specification
-
-abstract class SyncIOPlatformSpecification extends Specification with Runners {
+trait SyncIOPlatformSpecification { self: BaseSpec =>
   def platformSpecs = {
     "platform" should {
       "realTimeInstant should return an Instant constructed from realTime" in {
@@ -27,7 +25,7 @@ abstract class SyncIOPlatformSpecification extends Specification with Runners {
         val op = for {
           realTime <- SyncIO.realTime
           now <- SyncIO.realTimeInstant
-        } yield (now.toEpochMilli - realTime.toMillis) <= 30
+        } yield (now.toEpochMilli - realTime.toMillis) <= 10000
 
         op must completeAsSync(true)
       }

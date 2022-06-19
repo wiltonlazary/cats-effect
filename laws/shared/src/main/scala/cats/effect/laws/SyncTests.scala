@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Typelevel
+ * Copyright 2020-2022 Typelevel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import cats.Eq
 import cats.effect.kernel.Sync
 import cats.laws.discipline.SemigroupalTests.Isomorphisms
 
-import org.scalacheck._, Prop.forAll
+import org.scalacheck._
+import org.scalacheck.Prop.forAll
 
 trait SyncTests[F[_]]
     extends MonadCancelTests[F, Throwable]
@@ -58,7 +59,39 @@ trait SyncTests[F[_]]
     new RuleSet {
       val name = "sync"
       val bases = Nil
-      val parents = Seq(monadCancel[A, B, C], clock, unique)
+      val parents = Seq(
+        monadCancel[A, B, C](
+          implicitly[Arbitrary[A]],
+          implicitly[Eq[A]],
+          implicitly[Arbitrary[B]],
+          implicitly[Eq[B]],
+          implicitly[Arbitrary[C]],
+          implicitly[Eq[C]],
+          ArbFA,
+          ArbFB,
+          ArbFC,
+          ArbFU,
+          ArbFAtoB,
+          ArbFBtoC,
+          ArbE,
+          CogenA,
+          CogenB,
+          CogenC,
+          CogenE,
+          EqFA,
+          EqFB,
+          EqFC,
+          EqFU,
+          EqE,
+          EqFEitherEU,
+          EqFEitherEA,
+          EqFABC,
+          EqFInt,
+          iso
+        ),
+        clock,
+        unique
+      )
 
       val props = Seq(
         "suspend value is pure" -> forAll(laws.suspendValueIsPure[A] _),
